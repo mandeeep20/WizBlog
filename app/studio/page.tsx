@@ -91,9 +91,7 @@ export default async function StudioPage() {
               <PostCard
                 key={post.id}
                 post={post}
-                interactive={source === "supabase"}
-                returnPath="/studio"
-                viewerId={user.id}
+              interactive={source === "supabase"}
               />
             ))
           )}
