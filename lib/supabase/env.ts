@@ -1,19 +1,17 @@
 type SupabaseCredentials = {
   url: string;
-  publishableKey: string;
+  anonKey: string;
 };
 
 export function getSupabaseCredentials(): SupabaseCredentials | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const publishableKey =
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!url || !publishableKey) {
+  if (!url || !anonKey) {
     return null;
   }
 
-  return { url, publishableKey };
+  return { url, anonKey };
 }
 
 export function isSupabaseConfigured(): boolean {
