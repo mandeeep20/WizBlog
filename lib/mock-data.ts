@@ -5,7 +5,6 @@ export type DemoUser = {
   headline: string;
   bio: string;
   joinedOn: string;
-  avatar?: string; 
 };
 
 export type DemoPost = {
@@ -30,135 +29,119 @@ export type DemoComment = {
 export const demoUsers: DemoUser[] = [
   {
     id: "u_1",
-    name: "Mandeep Mutsuddy",
-    username: "mandeeep.69",
-    headline: "Product builder",
-    bio: "wizblog!.",
-    joinedOn: "Feb 26",
-    avatar: "/avatars/mandeep.jpeg", 
+    name: "Alex Rivera",
+    username: "alex-rivera",
+    headline: "Product engineer",
+    bio: "Building focused web products with Next.js, TypeScript, and clean data models.",
+    joinedOn: "Jan 2026",
   },
   {
     id: "u_2",
-    name: "Dishan Sarma",
-    username: "disham_sarma",
+    name: "Mina Park",
+    username: "mina-park",
     headline: "UX engineer",
     bio: "Designing interfaces that feel fast, clear, and easy to navigate.",
     joinedOn: "Dec 2025",
-    avatar: "/avatars/user2.jpeg",
   },
   {
     id: "u_3",
-    name: "Khushi K",
-    username: "khushiii",
+    name: "Jordan Lee",
+    username: "jordan-lee",
     headline: "Backend developer",
     bio: "Focused on reliable APIs, schema design, and performance at scale.",
     joinedOn: "Nov 2025",
-    avatar: "/avatars/user3.jpeg",
   },
 ];
-
 
 export const demoPosts: DemoPost[] = [
   {
     id: "p_1",
     author: demoUsers[0],
-    body: "Just worked on WizBlog UI today 🔥 Loving the orange fire aesthetic and smooth posting flow.",
+    body: "Shipped a cleaner publishing flow today. Draft, preview, and publish now fit in a single route with minimal friction.",
     createdAt: "2h ago",
     likes: 24,
     comments: 5,
     isLikedByViewer: true,
-    tags: ["wizblog", "nextjs", "shipping"],
+    tags: ["product", "nextjs", "shipping"],
   },
   {
     id: "p_2",
     author: demoUsers[1],
-    body: "Moved post actions closer to content and reduced sidebar clutter — huge UX improvement.",
+    body: "Small UI decision that helped a lot: moved post actions closer to the content block and reduced visual noise in the sidebar.",
     createdAt: "5h ago",
     likes: 41,
     comments: 8,
     isLikedByViewer: false,
-    tags: ["ui", "ux", "design"],
+    tags: ["ui", "ux", "design-systems"],
   },
   {
     id: "p_3",
     author: demoUsers[2],
-    body: "Composite primary keys remove duplicate likes automatically. Clean backend win.",
+    body: "If your likes table uses a composite primary key (post_id, user_id), duplicate likes disappear as a data problem.",
     createdAt: "1d ago",
     likes: 33,
     comments: 3,
     isLikedByViewer: false,
-    tags: ["sql", "backend", "supabase"],
+    tags: ["sql", "supabase", "backend"],
   },
   {
     id: "p_4",
     author: demoUsers[0],
-    body: "hope every one having a great day ahead.",
+    body: "Keeping scope tight: short posts, comments, and likes. Shipping a clear v1 beats delaying for edge features.",
     createdAt: "2d ago",
     likes: 16,
     comments: 2,
     isLikedByViewer: true,
-    tags: ["music", "product", "focus"],
+    tags: ["product", "focus", "mvp"],
   },
 ];
-
-
 
 export const demoComments: DemoComment[] = [
   {
     id: "c_1",
     postId: "p_1",
     author: demoUsers[1],
-    body: "The orange theme actually looks super clean 🔥",
+    body: "The single-route publish flow feels much smoother now.",
     createdAt: "1h ago",
   },
   {
     id: "c_2",
     postId: "p_1",
     author: demoUsers[2],
-    body: "Fire branding bro.",
+    body: "Nice improvement. Simpler flows are easier to maintain too.",
     createdAt: "40m ago",
   },
   {
     id: "c_3",
     postId: "p_2",
     author: demoUsers[0],
-    body: "Cleaner UI always wins.",
+    body: "Totally agree on reducing sidebar clutter.",
     createdAt: "3h ago",
   },
   {
     id: "c_4",
     postId: "p_3",
     author: demoUsers[1],
-    body: "Backend simplicity saves headaches later.",
+    body: "Composite keys save so many headaches over time.",
     createdAt: "20h ago",
   },
   {
     id: "c_5",
     postId: "p_4",
     author: demoUsers[2],
-    body: "Music + coding combo is elite.",
+    body: "Clear scope is the best way to keep momentum.",
     createdAt: "1d ago",
   },
 ];
 
-
-
 export const trendingTags = [
-  "wizblog",
   "nextjs",
   "supabase",
+  "product",
   "design",
+  "sql",
   "frontend",
 ];
-
-export const trendingTopic = [
-  "wizblog",
-  "nextjs",
-  "supabase",
-  "design",
-  "frontend",
-];
-
 
 export function findPostById(id: string): DemoPost | undefined {
   return demoPosts.find((post) => post.id === id);

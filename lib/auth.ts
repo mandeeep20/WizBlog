@@ -2,6 +2,7 @@ import type { User } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 
+import { getProfileDefaults } from "@/lib/profile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type CurrentProfile = {
@@ -18,27 +19,6 @@ type ProfileRow = {
   headline: string;
   avatar_url: string | null;
 };
-
-function getMetadataString(user: User, key: string): string {
-  const value = user.user_metadata?.[key];
-  return typeof value === "string" ? value : "";
-}
-
-function getFallbackUsername(user: User): string {
-  const metadataUsername = getMetadataString(user, "username").trim().toLowerCase();
-
-  if (metadataUsername.length >= 3) {
-    return metadataUsername;
-  }
-
-  const emailPrefix = user.email?.split("@")[0]?.toLowerCase().trim() ?? "";
-
-  if (emailPrefix.length >= 3) {
-    return emailPrefix;
-  }
-
-  return `user-${user.id.slice(0, 8)}`;
-}
 
 export const getCurrentUser = cache(async (): Promise<User | null> => {
   const supabase = await createSupabaseServerClient();
@@ -66,14 +46,14 @@ export const getCurrentProfile = cache(async (): Promise<CurrentProfile | null> 
     return null;
   }
 
+  const defaults = getProfileDefaults(user);
   const supabase = await createSupabaseServerClient();
   const fallbackProfile: CurrentProfile = {
     id: user.id,
-    username: getFallbackUsername(user),
-    fullName:
-      getMetadataString(user, "full_name") || getMetadataString(user, "name") || "BlogQiz User",
-    headline: getMetadataString(user, "headline"),
-    avatarUrl: getMetadataString(user, "avatar_url") || null,
+    username: defaults.username,
+    fullName: defaults.fullName || "BlogQiz User",
+    headline: defaults.headline,
+    avatarUrl: defaults.avatarUrl,
   };
 
   if (!supabase) {

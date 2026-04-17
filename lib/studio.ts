@@ -31,5 +31,4 @@ export function buildStudioStats(posts: DemoPost[], commentsWritten: number): St
     commentsWritten,
     topTags: getTopTagsFromPosts(posts),
   };
-
 }
