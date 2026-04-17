@@ -1,4 +1,5 @@
 import { demoPosts, type DemoPost } from "@/lib/mock-data";
+import { normalizeSearchQuery, normalizeTag } from "@/lib/posts";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type FeedMode = "all" | "featured";
@@ -25,6 +26,9 @@ type GetFeedPostsOptions = {
   mode?: FeedMode;
   limit?: number;
   viewerId?: string | null;
+  query?: string;
+  authorId?: string;
+  tag?: string;
 };
 
 type GetFeedPostsResult = {
@@ -53,11 +57,13 @@ export function getDefaultHomeFeedMode(): FeedMode {
 export async function getFeedPosts(options: GetFeedPostsOptions = {}): Promise<GetFeedPostsResult> {
   const mode = options.mode ?? "all";
   const limit = options.limit ?? DEFAULT_LIMITS[mode];
+  const searchQuery = normalizeSearchQuery(options.query ?? "");
+  const activeTag = normalizeTag(options.tag ?? "");
   const supabase = await createSupabaseServerClient();
 
   if (!supabase) {
     return {
-      posts: getFallbackPosts(mode, limit),
+      posts: getFallbackPosts(mode, limit, searchQuery, options.authorId, activeTag),
       source: "fallback",
       error:
         "Supabase env vars are missing. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.",
@@ -65,6 +71,20 @@ export async function getFeedPosts(options: GetFeedPostsOptions = {}): Promise<G
   }
 
   let query = supabase.from("feed_posts").select("*");
+
+  if (options.authorId) {
+    query = query.eq("author_id", options.authorId);
+  }
+
+  if (activeTag) {
+    query = query.contains("tags", [activeTag]);
+  }
+
+  if (searchQuery) {
+    query = query.or(
+      `content.ilike.%${searchQuery}%,username.ilike.%${searchQuery}%,full_name.ilike.%${searchQuery}%`
+    );
+  }
 
   if (mode === "featured") {
     query = query
@@ -79,7 +99,7 @@ export async function getFeedPosts(options: GetFeedPostsOptions = {}): Promise<G
 
   if (error || !data) {
     return {
-      posts: getFallbackPosts(mode, limit),
+      posts: getFallbackPosts(mode, limit, searchQuery, options.authorId, activeTag),
       source: "fallback",
       error: error?.message ?? "Failed to load feed data from Supabase.",
     };
@@ -94,14 +114,40 @@ export async function getFeedPosts(options: GetFeedPostsOptions = {}): Promise<G
   };
 }
 
-function getFallbackPosts(mode: FeedMode, limit: number): DemoPost[] {
+function getFallbackPosts(
+  mode: FeedMode,
+  limit: number,
+  searchQuery = "",
+  authorId?: string,
+  activeTag = ""
+): DemoPost[] {
+  let posts = [...demoPosts];
+
+  if (authorId) {
+    posts = posts.filter((post) => post.author.id === authorId);
+  }
+
+  if (searchQuery) {
+    const normalizedQuery = searchQuery.toLowerCase();
+    posts = posts.filter(
+      (post) =>
+        post.body.toLowerCase().includes(normalizedQuery) ||
+        post.author.name.toLowerCase().includes(normalizedQuery) ||
+        post.author.username.toLowerCase().includes(normalizedQuery)
+    );
+  }
+
+  if (activeTag) {
+    posts = posts.filter((post) => post.tags.includes(activeTag));
+  }
+
   if (mode === "featured") {
-    return [...demoPosts]
+    return posts
       .sort((left, right) => right.likes + right.comments - (left.likes + left.comments))
       .slice(0, limit);
   }
 
-  return demoPosts.slice(0, limit);
+  return posts.slice(0, limit);
 }
 
 async function getLikedPostIdsForViewer(
