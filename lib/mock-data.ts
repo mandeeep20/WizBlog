@@ -5,6 +5,7 @@ export type DemoUser = {
   headline: string;
   bio: string;
   joinedOn: string;
+  avatar?: string; // ✅ added
 };
 
 export type DemoPost = {
@@ -34,6 +35,7 @@ export const demoUsers: DemoUser[] = [
     headline: "Product engineer",
     bio: "Building focused web products with Next.js, TypeScript, and clean data models.",
     joinedOn: "Jan 2026",
+    avatar: "/avatars/alex.jpeg", // ✅ added
   },
   {
     id: "u_2",
@@ -42,6 +44,7 @@ export const demoUsers: DemoUser[] = [
     headline: "UX engineer",
     bio: "Designing interfaces that feel fast, clear, and easy to navigate.",
     joinedOn: "Dec 2025",
+    avatar: "/avatars/mina.jpeg", // ✅ added
   },
   {
     id: "u_3",
@@ -50,6 +53,7 @@ export const demoUsers: DemoUser[] = [
     headline: "Backend developer",
     bio: "Focused on reliable APIs, schema design, and performance at scale.",
     joinedOn: "Nov 2025",
+    avatar: "/avatars/jordan.jpeg", // ✅ added
   },
 ];
 
