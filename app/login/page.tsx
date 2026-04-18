@@ -2,6 +2,7 @@ import Link from "next/link";
 import { LockKeyhole, Mail } from "lucide-react";
 
 import { AppShell } from "@/components/custom/app-shell";
+import { signInAction } from "../auth/actions";
 
 export default function LoginPage() {
   return (
@@ -33,7 +34,8 @@ export default function LoginPage() {
             Access your account in seconds.
           </p>
 
-          <form className="mt-6 space-y-4" method="post">
+          {/* 🔥 IMPORTANT FIX HERE */}
+          <form action={signInAction} className="mt-6 space-y-4">
             
             {/* Email */}
             <label className="block text-sm font-medium text-slate-700">
