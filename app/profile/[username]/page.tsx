@@ -1,39 +1,54 @@
 import Image from "next/image";
+import { notFound } from "next/navigation";
 import { AppShell } from "@/components/custom/app-shell";
-import { PostCard } from "@/components/custom/post-card";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   ChartNoAxesColumn,
   MessageCircleMore,
   ThumbsUp,
 } from "lucide-react";
 
-import {
-  demoUsers,
-  findUserByUsername,
-  getPostsForUser,
-} from "@/lib/mock-data";
-
 type ProfilePageProps = {
-  params: Promise<{ username: string }>;  // ✅ Fixed: Promise wrapper
+  params: { username: string };
 };
 
-export default async function ProfilePage({ params }: ProfilePageProps) {
-  // ✅ Await the params
-  const { username } = await params;
-  
-  const normalizedUsername = decodeURIComponent(username)
+export default async function ProfilePage({
+  params,
+}: ProfilePageProps) {
+  const supabase = await createSupabaseServerClient();
+
+  if (!supabase) return notFound();
+
+  const normalizedUsername = decodeURIComponent(params.username)
     .replace(/^@/, "")
     .toLowerCase();
 
-  const profile = findUserByUsername(normalizedUsername) ?? demoUsers[0];
+  // 🔥 Fetch profile from Supabase
+  const { data: profile, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("username", normalizedUsername)
+    .single();
 
-  const posts = getPostsForUser(profile.username) ?? [];
+  if (error || !profile) {
+    return notFound();
+  }
 
-  const totalLikes = posts.reduce((sum, post) => sum + (post.likes ?? 0), 0);
-  const totalComments = posts.reduce((sum, post) => sum + (post.comments ?? 0), 0);
+  // 🔥 Fetch posts for this user (if you have posts table)
+  const { data: posts } = await supabase
+    .from("posts")
+    .select("*")
+    .eq("author_id", profile.id)
+    .order("created_at", { ascending: false });
+
+  const totalLikes =
+    posts?.reduce((sum, post) => sum + (post.likes ?? 0), 0) ?? 0;
+
+  const totalComments =
+    posts?.reduce((sum, post) => sum + (post.comments ?? 0), 0) ?? 0;
 
   const stats = [
-    { label: "Posts", value: posts.length, icon: ChartNoAxesColumn },
+    { label: "Posts", value: posts?.length ?? 0, icon: ChartNoAxesColumn },
     { label: "Comments", value: totalComments, icon: MessageCircleMore },
     { label: "Likes", value: totalLikes, icon: ThumbsUp },
   ];
@@ -47,8 +62,8 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex items-center gap-4">
                 <Image
-                  src={profile.avatar || "/avatars/mandeep.jpeg"}
-                  alt={profile.name}
+                  src={profile.avatar_url || "/avatars/mandeep.jpeg"}
+                  alt={profile.full_name}
                   width={72}
                   height={72}
                   className="rounded-full border border-orange-200 object-cover"
@@ -58,33 +73,46 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                     @{profile.username}
                   </p>
                   <h1 className="mt-1 text-2xl font-semibold text-slate-900">
-                    {profile.name}
+                    {profile.full_name}
                   </h1>
                   <p className="text-sm font-medium text-orange-600">
                     {profile.headline}
                   </p>
                 </div>
               </div>
+
               <button className="rounded-xl border border-orange-300 bg-white px-4 py-2 text-sm font-semibold text-orange-700 hover:bg-orange-100">
                 Follow
               </button>
             </div>
+
             <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
               {profile.bio}
             </p>
+
             <div className="mt-4 flex flex-wrap gap-4 text-sm text-slate-600">
-              <span>Joined {profile.joinedOn}</span>
-              <span>{posts.length} posts</span>
+              <span>
+                Joined{" "}
+                {new Date(profile.created_at).toLocaleDateString()}
+              </span>
+              <span>{posts?.length ?? 0} posts</span>
             </div>
           </header>
-          
+
+          {/* Posts */}
           <div className="space-y-4">
-            {posts.map((post) => (
-              <PostCard key={post.id} post={post} />
+            {posts?.map((post) => (
+              <div
+                key={post.id}
+                className="rounded-xl border p-4 bg-white shadow-sm"
+              >
+                <p>{post.content}</p>
+              </div>
             ))}
           </div>
         </div>
-        
+
+        {/* Stats */}
         <aside className="grid h-fit gap-3">
           {stats.map((stat) => {
             const Icon = stat.icon;
