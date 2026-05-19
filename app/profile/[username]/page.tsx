@@ -17,38 +17,58 @@ export default async function ProfilePage({
 }: ProfilePageProps) {
   const supabase = await createSupabaseServerClient();
 
-  if (!supabase) return notFound();
-
-  const normalizedUsername = decodeURIComponent(params.username)
-    .replace(/^@/, "")
-    .toLowerCase();
-
-  // 🔥 Fetch profile from Supabase
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("username", normalizedUsername)
-    .single();
-
-  if (error || !profile) {
+  if (!supabase) {
+    console.error("Supabase client not created");
     return notFound();
   }
 
-  // 🔥 Fetch posts for this user (if you have posts table)
-  const { data: posts } = await supabase
+  // Normalize username from URL
+  const normalizedUsername = decodeURIComponent(params.username)
+    .replace(/^@/, "")
+    .trim()
+    .toLowerCase();
+
+  // 🔥 Fetch profile safely
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("*")
+    .ilike("username", normalizedUsername)
+    .maybeSingle();
+
+  if (profileError) {
+    console.error("PROFILE FETCH ERROR:", profileError);
+  }
+
+  if (!profile) {
+    console.error("Profile not found for:", normalizedUsername);
+    return notFound();
+  }
+
+  // 🔥 Fetch posts safely
+  const { data: posts, error: postsError } = await supabase
     .from("posts")
     .select("*")
     .eq("author_id", profile.id)
     .order("created_at", { ascending: false });
 
-  const totalLikes =
-    posts?.reduce((sum, post) => sum + (post.likes ?? 0), 0) ?? 0;
+  if (postsError) {
+    console.error("POSTS FETCH ERROR:", postsError);
+  }
 
-  const totalComments =
-    posts?.reduce((sum, post) => sum + (post.comments ?? 0), 0) ?? 0;
+  const safePosts = posts ?? [];
+
+  const totalLikes = safePosts.reduce(
+    (sum, post) => sum + (post.likes ?? 0),
+    0
+  );
+
+  const totalComments = safePosts.reduce(
+    (sum, post) => sum + (post.comments ?? 0),
+    0
+  );
 
   const stats = [
-    { label: "Posts", value: posts?.length ?? 0, icon: ChartNoAxesColumn },
+    { label: "Posts", value: safePosts.length, icon: ChartNoAxesColumn },
     { label: "Comments", value: totalComments, icon: MessageCircleMore },
     { label: "Likes", value: totalLikes, icon: ThumbsUp },
   ];
@@ -57,13 +77,15 @@ export default async function ProfilePage({
     <AppShell activePath={`/profile/${profile.username}`}>
       <section className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.6fr_0.8fr]">
         
+        {/* LEFT SIDE */}
         <div className="space-y-5">
           <header className="rounded-2xl border border-orange-200 bg-orange-50 p-6 shadow-sm">
             <div className="flex flex-wrap items-start justify-between gap-4">
+              
               <div className="flex items-center gap-4">
                 <Image
                   src={profile.avatar_url || "/avatars/mandeep.jpeg"}
-                  alt={profile.full_name}
+                  alt={profile.full_name || "User Avatar"}
                   width={72}
                   height={72}
                   className="rounded-full border border-orange-200 object-cover"
@@ -73,10 +95,10 @@ export default async function ProfilePage({
                     @{profile.username}
                   </p>
                   <h1 className="mt-1 text-2xl font-semibold text-slate-900">
-                    {profile.full_name}
+                    {profile.full_name || "No Name"}
                   </h1>
                   <p className="text-sm font-medium text-orange-600">
-                    {profile.headline}
+                    {profile.headline || ""}
                   </p>
                 </div>
               </div>
@@ -86,22 +108,32 @@ export default async function ProfilePage({
               </button>
             </div>
 
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
-              {profile.bio}
-            </p>
+            {profile.bio && (
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
+                {profile.bio}
+              </p>
+            )}
 
             <div className="mt-4 flex flex-wrap gap-4 text-sm text-slate-600">
               <span>
                 Joined{" "}
-                {new Date(profile.created_at).toLocaleDateString()}
+                {profile.created_at
+                  ? new Date(profile.created_at).toLocaleDateString()
+                  : ""}
               </span>
-              <span>{posts?.length ?? 0} posts</span>
+              <span>{safePosts.length} posts</span>
             </div>
           </header>
 
-          {/* Posts */}
+          {/* POSTS */}
           <div className="space-y-4">
-            {posts?.map((post) => (
+            {safePosts.length === 0 && (
+              <div className="rounded-xl border p-4 bg-white shadow-sm text-sm text-slate-500">
+                No posts yet.
+              </div>
+            )}
+
+            {safePosts.map((post) => (
               <div
                 key={post.id}
                 className="rounded-xl border p-4 bg-white shadow-sm"
@@ -112,7 +144,7 @@ export default async function ProfilePage({
           </div>
         </div>
 
-        {/* Stats */}
+        {/* RIGHT SIDE STATS */}
         <aside className="grid h-fit gap-3">
           {stats.map((stat) => {
             const Icon = stat.icon;
